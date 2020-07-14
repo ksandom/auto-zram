@@ -2,7 +2,20 @@
 
 # Stuff that might be good to abstract out for a user to configure.
 percentageOfRamToUse=80
-deviceConfig="/sys/deviceConfigs/virtual/block/zram0"
+device=zram0
+
+function findDeviceConfig
+{
+  for possibleConfig in "/sys/deviceConfigs/virtual/block/$device" "/sys/devices/virtual/block/$device"
+  do
+    if [ -e "$possibleConfig" ]; then
+      echo "$possibleConfig"
+    fi
+  done
+}
+
+# Find the config.
+deviceConfig="$(findDeviceConfig | head -n1)"
 
 # Figure out the settings that we should use.
 totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
@@ -16,26 +29,27 @@ let coresToUse=$coresAvailable-1
 
 # Display what we have figured out.
 echo "Config
-    % of memory to use  $percentageOfRamToUse
-    device config       $deviceConfig
+  % of memory to use  $percentageOfRamToUse
+  device config       $deviceConfig
 
-Memory
-    total               $totalMemory
-    maxPhysicalUsage    $maxPhysicalUsage
-    virtualSize         $virtualSize
-    uncompressed        $uncompressedMemory
-    ---
-    totalPossible       $totalPossible
+Memory (MB)
+  total               $totalMemory
+  maxPhysicalUsage    $maxPhysicalUsage
+  virtualSize         $virtualSize
+  uncompressed        $uncompressedMemory
+  ---
+  totalPossible       $totalPossible
 
 CPU
-    coresAvailable      $coresAvailable
-    coresToUse          $coresToUse"
+  coresAvailable      $coresAvailable
+  coresToUse          $coresToUse"
 
 # Apply it.
 swapoff -a
 
 if ! lsmod | grep -q zram; then
-    modprobe zram
+  echo "zram module isn't loaded. Loading it."
+  modprobe zram
 fi
 
 echo "$coresToUse" > "$deviceConfig/max_comp_streams"
