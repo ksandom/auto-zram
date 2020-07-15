@@ -127,8 +127,17 @@ function unloadIt
   swapon -a
 }
 
+function requireRoot
+{
+  if [ "$(id -u)" != '0' ]; then
+    echo "You need to be root to perform this action." >&2
+    exit 1
+  fi
+}
+
 case $1 in
   "start") # Configure zram as swap.
+    requireRoot
     loadModule
     deviceConfig="$(findDeviceConfig | head -n1)"
     figureOutStuff
@@ -136,12 +145,14 @@ case $1 in
     status
   ;;
   "stop") # Unload zram from being used as swap.
+    requireRoot
     unloadIt
     figureOutStuff
     status
   ;;
   "status") # Show the current state.
     figureOutStuff
+    deviceConfig="$(findDeviceConfig | head -n1)"
     status
   ;;
   *)
