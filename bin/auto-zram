@@ -19,27 +19,75 @@ function findDeviceConfig
   done
 }
 
+function moduleIsLoaded
+{
+  if lsmod | grep -q zram; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 function loadModule
 {
-  if ! lsmod | grep -q zram; then
+  if ! moduleIsLoaded; then
     echo "zram module isn't loaded. Loading it."
     modprobe zram
   fi
 }
 
-## Figure out the settings that we should use.
-totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
-let maxPhysicalUsage=$totalMemory*$percentageOfRamToUse/100
-let virtualSize=$maxPhysicalUsage*2
-let uncompressedMemory=$totalMemory-$maxPhysicalUsage
-let totalPossible=$uncompressedMemory+$virtualSize
+function figureOutStuff
+{
+  totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
+  let maxPhysicalUsage=$totalMemory*$percentageOfRamToUse/100
+  let virtualSize=$maxPhysicalUsage*2
+  let uncompressedMemory=$totalMemory-$maxPhysicalUsage
+  let totalPossible=$uncompressedMemory+$virtualSize
 
-coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
-let coresToUse=$coresAvailable-1
+  coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
+  let coresToUse=$coresAvailable-1
+}
+
+function getMount
+{
+  lsblk | head -n 1
+  lsblk | grep zram
+}
+
+function getSwapState
+{
+  free -m | head -n 1
+  free -m | grep ^Swap:
+}
+
+function indent
+{
+  withThis="$1"
+  
+  sed "s/^/$withThis/g"
+}
 
 function status
 {
-  ## Display what we have figured out.
+  if moduleIsLoaded; then
+    moduleState="loaded"
+  else
+    moduleState="not loaded"
+  fi
+  
+  echo "State
+  module              $moduleState
+
+Mount"
+  
+  getMount | indent "    "
+  
+  echo "
+Swap"
+  
+  getSwapState | indent "    "
+
+  echo
   echo "Config
   % of memory to use  $percentageOfRamToUse
   device              $device
@@ -83,13 +131,17 @@ case $1 in
   "start") # Configure zram as swap.
     loadModule
     deviceConfig="$(findDeviceConfig | head -n1)"
-    status
+    figureOutStuff
     applyIt
+    status
   ;;
   "stop") # Unload zram from being used as swap.
     unloadIt
+    figureOutStuff
+    status
   ;;
   "status") # Show the current state.
+    figureOutStuff
     status
   ;;
   *)
