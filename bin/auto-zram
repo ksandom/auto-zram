@@ -1,8 +1,13 @@
 #!/bin/bash
+# $0 - Manages zram as swap.
+# 
+# Usage
+#   $0 action
 
-# Stuff that might be good to abstract out for a user to configure.
-percentageOfRamToUse=80
-device=zram0
+## Stuff that might be good to abstract out for a user to configure.
+percentageOfRamToUse="80"
+device="zram0"
+temporaryState="/var/lock/auto-zram"
 
 function findDeviceConfig
 {
@@ -14,14 +19,15 @@ function findDeviceConfig
   done
 }
 
-# Find the config.
-if ! lsmod | grep -q zram; then
-  echo "zram module isn't loaded. Loading it."
-  modprobe zram
-fi
-deviceConfig="$(findDeviceConfig | head -n1)"
+function loadModule
+{
+  if ! lsmod | grep -q zram; then
+    echo "zram module isn't loaded. Loading it."
+    modprobe zram
+  fi
+}
 
-# Figure out the settings that we should use.
+## Figure out the settings that we should use.
 totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
 let maxPhysicalUsage=$totalMemory*$percentageOfRamToUse/100
 let virtualSize=$maxPhysicalUsage*2
@@ -31,8 +37,10 @@ let totalPossible=$uncompressedMemory+$virtualSize
 coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
 let coresToUse=$coresAvailable-1
 
-# Display what we have figured out.
-echo "Config
+function status
+{
+  ## Display what we have figured out.
+  echo "Config
   % of memory to use  $percentageOfRamToUse
   device              $device
   device config       $deviceConfig
@@ -48,16 +56,46 @@ Memory (MB)
 CPU
   coresAvailable      $coresAvailable
   coresToUse          $coresToUse"
+}
 
-# Apply it.
-swapoff -a
+function applyIt
+{
+  swapoff -a
 
-echo "$coresToUse" > "$deviceConfig/max_comp_streams"
-echo "lz4" > "$deviceConfig/comp_algorithm"
-echo "${maxPhysicalUsage}M" > "$deviceConfig/mem_limit"
-echo "${virtualSize}M" > "$deviceConfig/disksize"
+  echo "$coresToUse" > "$deviceConfig/max_comp_streams"
+  echo "lz4" > "$deviceConfig/comp_algorithm"
+  echo "${maxPhysicalUsage}M" > "$deviceConfig/mem_limit"
+  echo "${virtualSize}M" > "$deviceConfig/disksize"
 
-mkswap /dev/zram0
-swapon -p 0 /dev/zram0
-sysctl vm.swappiness=70
+  mkswap /dev/zram0
+  swapon -p 0 /dev/zram0
+  sysctl vm.swappiness=70
+}
 
+function unloadIt
+{
+  swapoff -a
+  modprobe -r zram
+  swapon -a
+}
+
+case $1 in
+  "start") # Configure zram as swap.
+    loadModule
+    deviceConfig="$(findDeviceConfig | head -n1)"
+    status
+    applyIt
+  ;;
+  "stop") # Unload zram from being used as swap.
+    unloadIt
+  ;;
+  "status") # Show the current state.
+    status
+  ;;
+  *)
+    command="$(basename $0)"
+    grep "^# " $0 | sed "s#\\\$0#$command#g" | cut -b3-
+    echo -e "\nWhere action is one of"
+    grep '") [#] ' $0 | sed 's/"//g; s/) # /\t/g' | column -t -s"$(echo -e "\\t")"
+  ;;
+esac
