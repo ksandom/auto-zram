@@ -94,25 +94,10 @@ function status
     mountState="not mounted"
   fi
   
-  echo "State
-  module              $moduleState
-  device              $mountState
-
-Mount"
-  
-  getMount | indent "  "
-  
-  echo "
-Swap"
-  
-  getSwapState | indent "  "
-
-  echo
-  echo "Config
+echo "  Config
   % of memory to use  $percentageOfRamToUse
   device              $device
   device config       $deviceConfig
-
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
@@ -124,7 +109,23 @@ Derived config/knowledge
 
   CPU
     coresAvailable      $coresAvailable
-    coresToUse          $coresToUse"
+    coresToUse          $coresToUse
+
+State
+  General
+    module              $moduleState
+    device              $mountState
+
+  Mount"
+    
+    getMount | indent "    "
+    
+    echo "
+  Swap"
+    
+    getSwapState | indent "    "
+
+  echo
 }
 
 function applyIt

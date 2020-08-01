@@ -4,6 +4,7 @@ After=network.target
 
 [Service]
 Type=forking
+RemainAfterExit=yes
 ExecStart=/usr/bin/auto-zram start
 ExecStop=/usr/bin/auto-zram stop
 Restart=no
