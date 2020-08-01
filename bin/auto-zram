@@ -7,6 +7,7 @@
 ## Stuff that might be good to abstract out for a user to configure.
 percentageOfRamToUse="80"
 device="zram0"
+fullDevice="/dev/$device"
 temporaryState="/var/lock/auto-zram"
 
 function findDeviceConfig
@@ -67,6 +68,15 @@ function indent
   sed "s/^/$withThis/g"
 }
 
+function isInUse
+{
+  if swapon --show | grep -q "^$fullDevice"; then
+    return 0
+  else
+    return 1
+  fi
+}
+
 function status
 {
   if moduleIsLoaded; then
@@ -75,17 +85,24 @@ function status
     moduleState="not loaded"
   fi
   
+  if isInUse; then
+    mountState="mounted"
+  else
+    mountState="not mounted"
+  fi
+  
   echo "State
   module              $moduleState
+  device              $mountState
 
 Mount"
   
-  getMount | indent "    "
+  getMount | indent "  "
   
   echo "
 Swap"
   
-  getSwapState | indent "    "
+  getSwapState | indent "  "
 
   echo
   echo "Config
@@ -138,16 +155,24 @@ function requireRoot
 case $1 in
   "start") # Configure zram as swap.
     requireRoot
-    loadModule
-    deviceConfig="$(findDeviceConfig | head -n1)"
-    figureOutStuff
-    applyIt
+    if ! isInUse; then
+      loadModule
+      deviceConfig="$(findDeviceConfig | head -n1)"
+      figureOutStuff
+      applyIt
+    else
+      echo "ZRAM already mounted using $device." >&2
+    fi
     status
   ;;
   "stop") # Unload zram from being used as swap.
     requireRoot
-    unloadIt
-    figureOutStuff
+    if isInUse; then
+      unloadIt
+      figureOutStuff
+    else
+      echo "ZRAM not mounted using $device." >&2
+    fi
     status
   ;;
   "status") # Show the current state.
