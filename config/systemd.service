@@ -1,0 +1,12 @@
+[Unit]
+Description=ZRAM automatic configuration
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/auto-zram start
+ExecStop=/usr/bin/auto-zram stop
+Restart=no
+
+[Install]
+WantedBy=multi-user.target
