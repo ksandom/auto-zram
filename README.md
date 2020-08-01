@@ -6,7 +6,7 @@ Originally inspired by [this gist](https://gist.github.com/sultanqasim/79799883c
 
 ## Install
 
-Currently the install method is assumed to be systemd, however the script has been structures to slot right in to a traditional `init.d` style service management.
+Currently the install method is assumed to be systemd, however the script has been structured to be easy to slot right in to a traditional `init.d` style service management.
 
 ```bash
 sudo make install
