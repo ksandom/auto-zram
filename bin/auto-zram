@@ -94,7 +94,7 @@ function status
     mountState="not mounted"
   fi
   
-echo "  Config
+echo "Config
   % of memory to use  $percentageOfRamToUse
   device              $device
   device config       $deviceConfig
