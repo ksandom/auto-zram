@@ -47,6 +47,9 @@ function figureOutStuff
 
   coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
   let coresToUse=$coresAvailable-1
+  if [ $coresToUse -lt 1 ]; then
+    coresToUse=1;
+  fi
 }
 
 function getMount
@@ -110,17 +113,18 @@ Swap"
   device              $device
   device config       $deviceConfig
 
-Memory (MB)
-  total               $totalMemory
-  maxPhysicalUsage    $maxPhysicalUsage
-  virtualSize         $virtualSize
-  uncompressed        $uncompressedMemory
-  ---
-  totalPossible       $totalPossible
+Derived config/knowledge
+  Memory (MB)
+    total               $totalMemory
+    maxPhysicalUsage    $maxPhysicalUsage
+    virtualSize         $virtualSize
+    uncompressed        $uncompressedMemory
+    ---
+    totalPossible       $totalPossible
 
-CPU
-  coresAvailable      $coresAvailable
-  coresToUse          $coresToUse"
+  CPU
+    coresAvailable      $coresAvailable
+    coresToUse          $coresToUse"
 }
 
 function applyIt
