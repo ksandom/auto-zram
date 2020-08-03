@@ -47,7 +47,14 @@ function figureOutStuff
 
   coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
   let coresToUse=$coresAvailable-1
+
   if [ $coresToUse -lt 1 ]; then
+    echo "$coresToUse coresToUse is too small. Overriding to 1." >&2
+    coresToUse=1;
+  fi
+
+  if [ $coresToUse -gt $coresAvailable ]; then
+    echo "$coresToUse coresToUse is too high. Overriding to coresAvailable ($coresAvailable)." >&2
     coresToUse=1;
   fi
 }
