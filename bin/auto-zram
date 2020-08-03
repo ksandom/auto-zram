@@ -95,9 +95,9 @@ function status
   fi
   
 echo "Config
-  % of memory to use  $percentageOfRamToUse
-  device              $device
-  device config       $deviceConfig
+  % of memory to use    $percentageOfRamToUse
+  device                $device
+  device config         $deviceConfig
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
