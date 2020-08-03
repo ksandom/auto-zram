@@ -4,11 +4,19 @@
 # Usage
 #   $0 action
 
-## Stuff that might be good to abstract out for a user to configure.
+configFile="/etc/auto-zram.sh"
+
+## Set some sensible defaults.
 percentageOfRamToUse="80"
 device="zram0"
 fullDevice="/dev/$device"
-temporaryState="/var/lock/auto-zram"
+
+## Load the config if it's available.
+loadedConfigFile='false'
+if [ -e "$configFile" ]; then
+  . "$configFile"
+  loadedConfigFile='true'
+fi
 
 function findDeviceConfig
 {
@@ -105,6 +113,8 @@ echo "Config
   % of memory to use    $percentageOfRamToUse
   device                $device
   device config         $deviceConfig
+  used config file      $loadedConfigFile
+  config file           $configFile
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
