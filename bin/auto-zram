@@ -5,6 +5,8 @@
 #   $0 action
 
 configFile="/etc/auto-zram.sh"
+percentUpperWarnLevel=95
+percentLowerWarnLevel=1
 
 ## Set some sensible defaults.
 percentageOfRamToUse="80"
@@ -64,6 +66,14 @@ function figureOutStuff
   if [ $coresToUse -gt $coresAvailable ]; then
     echo "$coresToUse coresToUse is too high. Overriding to coresAvailable ($coresAvailable)." >&2
     coresToUse=1;
+  fi
+
+  if [ "$percentageOfRamToUse" -gt "$percentUpperWarnLevel" ]; then
+    echo "WARNING: This warning for percentageOfRamToUse is configured to go off above $percentUpperWarnLevel. You can ignore this warning and it will almost certainly work for a little while. But please take a moment to make sure it is actually what you want to do. It's highly likely that this will be unstable or at the minimum perform poorly." >&2
+  fi
+
+  if [ "$percentageOfRamToUse" -lt "$percentLowerWarnLevel" ]; then
+    echo "WARNING: This warning for percentageOfRamToUse is configured to go off below $percentLowerWarnLevel. It's unlikely that this is what you want to do, and I have not tested this configuration. Please run \`auto-zram status\` to see if the numbers are what you expect. In particular, check \"uncompressed\" which is how much RAM will be free when swap has reached it's full footprint." >&2
   fi
 }
 
