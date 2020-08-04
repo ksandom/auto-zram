@@ -212,10 +212,16 @@ case $1 in
     deviceConfig="$(findDeviceConfig | head -n1)"
     status
   ;;
+  "prototype") # Show what would be the current state with a different percentage as percentageOfRamToUse. Eg $0 prototype 50 . You can apply this in /etc/auto-zram.sh .
+    percentageOfRamToUse="$2"
+    figureOutStuff
+    deviceConfig="$(findDeviceConfig | head -n1)"
+    status
+  ;;
   *)
     command="$(basename $0)"
     grep "^# " $0 | sed "s#\\\$0#$command#g" | cut -b3-
     echo -e "\nWhere action is one of"
-    grep '") [#] ' $0 | sed 's/"//g; s/) # /\t/g' | column -t -s"$(echo -e "\\t")"
+    grep '") [#] ' $0 | sed 's/"//g; s/) # /\t/g;s/$0/'"$command"'/g' | column -t -s"$(echo -e "\\t")"
   ;;
 esac
