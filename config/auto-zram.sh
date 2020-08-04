@@ -9,3 +9,6 @@ device="zram0"
 
 # fullDevice is for future compatibility, and for compatibility for systems I haven't thought of yet. It's simply the path to the device that zram provides.
 fullDevice="/dev/$device"
+
+# coresToKeepFree defines how many cores are kept free for doing actual work (as opposed to handling compression for zram.) Keeping more cores free will make the actual work faster during swapping events, while keeping less free will help the swapping events pass quicker. In my experience so far, 1 seems to be a good number: actual work can get done if it has everything it needs, while zram can finish as quickly as possible. If your machine only has one core, you'll probably need to set this to 0. Otherwise probably 1.
+coresToKeepFree=1
