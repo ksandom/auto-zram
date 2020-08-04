@@ -16,26 +16,38 @@ sudo make install
 
 ### All the normal systemd stuff
 
+What state is is in right now?
 ```bash
 sudo systemctl status auto-zram.service
 ```
 
+Start it. (Configure zram as swap.)
 ```bash
 sudo systemctl start auto-zram.service
 ```
 
+Stop it. (Revert to what ever settings you would have if auto-zram was not in use.)
 ```bash
 sudo systemctl stop auto-zram.service
 ```
 
-### More output
+Scroll through logs of what state it was in at various points in time. You'll probably want to press END on your keyboard to see the latest run.
+```bash
+journalctl -u auto-zram.service
+```
+
+### Figuring out what state stuff is in, or would be
+
+What state does the current config produce?
 
 ```bash
 $ auto-zram status
 Config
-  % of memory to use  80
-  device              zram0
-  device config       /sys/devices/virtual/block/zram0
+  % of memory to use    80
+  device                zram0
+  device config         /sys/devices/virtual/block/zram0
+  used config file      true
+  config file           /etc/auto-zram.sh
 Derived config/knowledge
   Memory (MB)
     total               7977
@@ -56,16 +68,24 @@ State
 
   Mount
     NAME                   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
-    zram0                  252:0    0 12,5G  0 disk [SWAP]
+    zram0                  252:0    0 12,6G  0 disk [SWAP]
 
   Swap
                   total        used        free      shared  buff/cache   available
-    Swap:         12761           0       12761
+    Swap:         12921           0       12921
 ```
+
+NOTE that this is not necessarily what is in memory at this moment. For that use the `journalctl -u auto-zram.service` command above.
+
 
 Or via systemd
 ```bash
 journalctl -u auto-zram.service
+```
+
+See what the state of the machine would look like if you specified 40 as your `percentageOfRamToUse`.
+```bash
+auto-zram prototype 40
 ```
 
 ## Contributions
