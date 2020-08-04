@@ -1,6 +1,6 @@
 # auto-zram
 
-Automatically configure zram as swap on a machine, using sensible defaults.
+Automatically configure zram as swap on a machine, using sensible defaults, with the ability to tweak it to your needs.
 
 Originally inspired by [this gist](https://gist.github.com/sultanqasim/79799883c6b81c710e36a38008dfa374) which configures zram on a Raspberry Pi with exact specifications.
 
