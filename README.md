@@ -12,6 +12,13 @@ Currently the install method is assumed to be systemd, however the script has be
 sudo make install
 ```
 
+## Uninstall
+
+Once again, this is assumed to be on a systemd system, but could easily be adapted.
+```bash
+sudo make uninstall
+```
+
 ## Using it
 
 ### All the normal systemd stuff
