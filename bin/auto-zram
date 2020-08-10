@@ -17,6 +17,7 @@ coresToKeepFree=1
 ## Load the config if it's available.
 loadedConfigFile='false'
 if [ -e "$configFile" ]; then
+  # shellcheck source=../config/auto-zram.sh
   . "$configFile"
   loadedConfigFile='true'
 fi
@@ -51,20 +52,20 @@ function loadModule
 function figureOutStuff
 {
   totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
-  let maxPhysicalUsage=$totalMemory*$percentageOfRamToUse/100
-  let virtualSize=$maxPhysicalUsage*2
-  let uncompressedMemory=$totalMemory-$maxPhysicalUsage
-  let totalPossible=$uncompressedMemory+$virtualSize
+  maxPhysicalUsage=$((totalMemory*percentageOfRamToUse/100))
+  virtualSize=$((maxPhysicalUsage*2))
+  uncompressedMemory=$((totalMemory-maxPhysicalUsage))
+  totalPossible=$((uncompressedMemory+virtualSize))
 
   coresAvailable="$(lscpu | grep '^Core(s) per socket:' | awk '{print $4}')"
-  let coresToUse=$coresAvailable-$coresToKeepFree
+  coresToUse=$((coresAvailable-coresToKeepFree))
 
-  if [ $coresToUse -lt 1 ]; then
+  if [ "$coresToUse" -lt 1 ]; then
     echo "WARNING: $coresToUse coresToUse is too small. Overriding to 1. coresToUse is derived by taking coresAvailable($coresAvailable) and subtracting $coresToKeepFree($coresToKeepFree)." >&2
     coresToUse=1;
   fi
 
-  if [ $coresToUse -gt $coresAvailable ]; then
+  if [ "$coresToUse" -gt "$coresAvailable" ]; then
     echo "WARNING: $coresToUse coresToUse is too high. Overriding to coresAvailable ($coresAvailable). coresToUse is derived by taking coresAvailable($coresAvailable) and subtracting $coresToKeepFree($coresToKeepFree)." >&2
     coresToUse=1;
   fi
@@ -221,9 +222,10 @@ case $1 in
     status
   ;;
   *)
-    command="$(basename $0)"
-    grep "^# " $0 | sed "s#\\\$0#$command#g" | cut -b3-
+    command="$(basename "$0")"
+    grep "^# " "$0" | sed "s#\\\$0#$command#g" | cut -b3-
     echo -e "\nWhere action is one of"
-    grep '") [#] ' $0 | sed 's/"//g; s/) # /\t/g;s/$0/'"$command"'/g' | column -t -s"$(echo -e "\\t")"
+    # shellcheck disable=SC2016
+    grep '") [#] ' "$0" | sed 's/"//g; s/) # /\t/g;s/$0/'"$command"'/g' | column -t -s"$(echo -e "\\t")"
   ;;
 esac
