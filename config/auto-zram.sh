@@ -12,3 +12,6 @@ fullDevice="/dev/$device"
 
 # coresToKeepFree defines how many cores are kept free for doing actual work (as opposed to handling compression for zram.) Keeping more cores free will make the actual work faster during swapping events, while keeping less free will help the swapping events pass quicker. In my experience so far, 1 seems to be a good number: actual work can get done if it has everything it needs, while zram can finish as quickly as possible. If your machine only has one core, you'll probably need to set this to 0. Otherwise probably 1.
 coresToKeepFree=1
+
+# Swappiness. There are lots of opinions about what this should be set to. I suggest googling it and working out what is right for you and your workload. Here's a promising article: https://www.howtogeek.com/449691/what-is-swapiness-on-linux-and-how-to-change-it/
+swappiness=0

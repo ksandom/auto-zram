@@ -13,6 +13,7 @@ percentageOfRamToUse="80"
 device="zram0"
 fullDevice="/dev/$device"
 coresToKeepFree=1
+swappiness=0
 
 ## Load the config if it's available.
 loadedConfigFile='false'
@@ -154,8 +155,14 @@ State
   Swap"
     
     getSwapState | indent "    "
+    getSwappiness | indent "    "
 
   echo
+}
+
+function getSwappiness
+{
+  sysctl vm.swappiness
 }
 
 function applyIt
@@ -169,7 +176,7 @@ function applyIt
 
   mkswap /dev/zram0
   swapon -p 0 /dev/zram0
-  sysctl vm.swappiness=70
+  sysctl vm.swappiness="$swappiness"
 }
 
 function unloadIt
