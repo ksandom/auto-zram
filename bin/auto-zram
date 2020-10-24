@@ -14,6 +14,7 @@ device="zram0"
 fullDevice="/dev/$device"
 coresToKeepFree=1
 swappiness=0
+compressionRatio=2
 
 ## Load the config if it's available.
 loadedConfigFile='false'
@@ -22,6 +23,46 @@ if [ -e "$configFile" ]; then
   . "$configFile"
   loadedConfigFile='true'
 fi
+
+function multiplyFloat
+{
+  base=1000
+  baseBase=$((base*base))
+  input1="$(integerIfy "$1" "$base")"
+  input2="$(integerIfy "$2" "$base")"
+  
+  result=$((input1*input2/baseBase))
+  
+  echo "$result"
+}
+
+function integerIfy
+{
+  # Get our requirements.
+  input="$1"
+  base="$2"
+  basePlaces=$(("$(echo "$base" | wc -c)"-2))
+  
+  # Get the basic parts.
+  left="$(echo "$input" | cut -d. -f1)"
+  right="$(echo "$input" | cut -d. -f2)"
+  
+  # Get rid of anything that is outside our base.
+  rightTruncated="${right::$basePlaces}"
+  
+  # Pad it out if we don't have enough places.
+  truncatedPlaces=$(("$(echo "$rightTruncated" | wc -c)"-1))
+  if [ "$truncatedPlaces" -lt "$basePlaces" ]; then
+    remainingPlaces=$((basePlaces-truncatedPlaces))
+    remainingPadding="$(printf '0%.0s' $(eval "echo {1.."$(($remainingPlaces))"}"))"
+    rightPadded="$rightTruncated$remainingPadding"
+  else
+    rightPadded="$rightTruncated"
+  fi
+  
+  # Put it all together.
+  echo "$left$rightPadded"
+}
 
 function findDeviceConfig
 {
@@ -54,7 +95,7 @@ function figureOutStuff
 {
   totalMemory="$(free -m | grep Mem: | awk '{print $2}')"
   maxPhysicalUsage=$((totalMemory*percentageOfRamToUse/100))
-  virtualSize=$((maxPhysicalUsage*2))
+  virtualSize=$((maxPhysicalUsage*compressionRatio))
   uncompressedMemory=$((totalMemory-maxPhysicalUsage))
   totalPossible=$((uncompressedMemory+virtualSize))
 
@@ -133,6 +174,7 @@ Derived config/knowledge
     total               $totalMemory
     maxPhysicalUsage    $maxPhysicalUsage
     virtualSize         $virtualSize
+    compressionRatio    $compressionRatio
     uncompressed        $uncompressedMemory
     ---
     totalPossible       $totalPossible
