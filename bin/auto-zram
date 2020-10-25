@@ -16,6 +16,10 @@ coresToKeepFree=1
 swappiness=0
 compressionRatio=2
 
+# This is for float maths. You probably don't need to mess with it.
+base=1000
+basePlaces=$(("$(echo "$base" | wc -c)"-2))
+
 ## Load the config if it's available.
 loadedConfigFile='false'
 if [ -e "$configFile" ]; then
@@ -26,22 +30,70 @@ fi
 
 function multiplyFloat
 {
-  base=1000
   baseBase=$((base*base))
-  input1="$(integerIfy "$1" "$base")"
-  input2="$(integerIfy "$2" "$base")"
+  input1="$(integerIfy "$1")"
+  input2="$(integerIfy "$2")"
   
   result=$((input1*input2/baseBase))
   
   echo "$result"
 }
 
+function divideFloat
+{
+  input1="$(integerIfy "$1")"
+  input2="$(integerIfy "$2")"
+  
+  preResult=$((input1*base/input2))
+  result="$(floatIfy "$preResult")"
+  
+  echo "$result"
+}
+
+function addFloat
+{
+  input1="$(integerIfy "$1")"
+  input2="$(integerIfy "$2")"
+  
+  preResult="$((input1+input2))"
+  result="$(floatIfy "$preResult")"
+  
+  echo "$result"
+}
+
+function subtractFloat
+{
+  input1="$(integerIfy "$1")"
+  input2="$(integerIfy "$2")"
+  
+  preResult="$((input1-input2))"
+  result="$(floatIfy "$preResult")"
+  
+  echo "$result"
+}
+
+function floatIfy
+{ # Takes a number that has been multiplied by the base (eg if the base is 1000, 1.234 would be 1234), and then effectively divides it by the base by re-inserting the decimal place.
+  input1="$1"
+  
+  # Chop off any decimal places we might have received since they will get truncated later anyway, so we may as well no worry about them further.
+  integer="$(echo "$input1" | cut -d. -f1)"
+  
+  # Figure out the parts.
+  left=${integer::-$basePlaces}
+  right=${integer: -$basePlaces}
+  
+  if [ "$left" == '' ]; then
+    left='0'
+  fi
+  
+  echo "${left}.${right}"
+}
+
 function integerIfy
 {
   # Get our requirements.
   input="$1"
-  base="$2"
-  basePlaces=$(("$(echo "$base" | wc -c)"-2))
   
   # Get the basic parts.
   left="$(echo "$input" | cut -d. -f1)"
@@ -149,6 +201,20 @@ function isInUse
   fi
 }
 
+function compressionAlalysis
+{
+  read uncompressedSize compressedSize < <(zramctl -nb -o DATA,COMPR /dev/zram0)
+  
+  maximumRatio="$(divideFloat "$uncompressedSize" "$compressedSize")"
+  saferRatio="$(subtractFloat "$maximumRatio" "1")"
+}
+
+function compressionAlalysisJson
+{
+  compressionAlalysis
+  echo "{\"uncompressedSize\":\"$uncompressedSize\",\"compressedSize\":\"$compressedSize\",\"maximumRatio\":\"$maximumRatio\",\"saferRatio\":\"$saferRatio\"}"
+}
+
 function status
 {
   if moduleIsLoaded; then
@@ -163,12 +229,20 @@ function status
     mountState="not mounted"
   fi
   
-echo "Config
+  compressionAlalysis
+  
+  echo "Config
   % of memory to use    $percentageOfRamToUse
   device                $device
   deviceConfig          $deviceConfig
   usedConfigFile        $loadedConfigFile
   config file           $configFile
+Compression Analysis (Beta)
+  uncompressedSize      $uncompressedSize
+  compressedSize        $compressedSize
+  maximumRatio          $maximumRatio
+  saferRatio            $saferRatio
+  configuredRatio       $compressionRatio
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
@@ -269,6 +343,9 @@ case $1 in
     figureOutStuff
     deviceConfig="$(findDeviceConfig | head -n1)"
     status
+  ;;
+  "compressionAlalysisJson") # Beta: Perform analysis on the compression, and output the results in json format for importing into your favourite analysis tool. For a human readable version, see status, above.
+    compressionAlalysisJson
   ;;
   *)
     command="$(basename "$0")"
