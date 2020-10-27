@@ -1,0 +1,9 @@
+[Unit]
+Description=Auto-ZRAM monitor
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/auto-zram compressionAlalysisJson
+
+[Install]
+WantedBy=timers.target
