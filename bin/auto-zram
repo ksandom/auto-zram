@@ -4,7 +4,7 @@
 # Usage
 #   $0 action
 
-configFile="/etc/auto-zram.sh"
+configFile="/etc/auto-zram/config"
 percentUpperWarnLevel=95
 percentLowerWarnLevel=1
 
@@ -15,6 +15,7 @@ fullDevice="/dev/$device"
 coresToKeepFree=1
 swappiness=0
 compressionRatio=2
+defaultLoopInterval=60
 
 # This is for float maths. You probably don't need to mess with it.
 base=1000
@@ -215,6 +216,16 @@ function compressionAlalysisJson
   echo "{\"uncompressedSize\":\"$uncompressedSize\",\"compressedSize\":\"$compressedSize\",\"maximumRatio\":\"$maximumRatio\",\"saferRatio\":\"$saferRatio\"}"
 }
 
+function compressionAlalysisJsonLoop
+{
+  interval="$1"
+  
+  compressionAlalysisJson
+  while sleep $interval; do
+    compressionAlalysisJson
+  done
+}
+
 function status
 {
   if moduleIsLoaded; then
@@ -346,6 +357,9 @@ case $1 in
   ;;
   "compressionAlalysisJson") # Beta: Perform analysis on the compression, and output the results in json format for importing into your favourite analysis tool. For a human readable version, see status, above.
     compressionAlalysisJson
+  ;;
+  "compressionAlalysisJsonLoop") # Same as compressionAlalysisJson, but in an infinite loop that runs every 'interval' seconds. Ie $0 compressionAlalysisJson [interval=$defaultLoopInterval]
+    compressionAlalysisJsonLoop "${2:-$defaultLoopInterval}"
   ;;
   *)
     command="$(basename "$0")"

@@ -95,9 +95,10 @@ See what the state of the machine would look like if you specified 40 as your `p
 auto-zram prototype 40
 ```
 
-## Special note
+## Special notes
 
-You should only start or stop `auto-zram` when you have enough physical RAM to spare to cover everything that is currently in swap. If you don't, you'll probably have one of the "Remember that time when..." stories to tell.
+* You should only start or stop `auto-zram` when you have enough physical RAM to spare to cover everything that is currently in swap. If you don't, you'll probably have one of the "Remember that time when..." stories to tell.
+* If you'd like to experiment with compression ratios, please read [here](docs/compressionRatios.md) first.
 
 ## Contributions
 
