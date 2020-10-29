@@ -52,9 +52,11 @@ journalctl -f -u auto-zram-monitorLoop.service
 ### Interpreting the results
 
 * Keep in mind that when there is little data in swap, the statistics are little better than a guess. You need to fill it with data to get a more accurate reading.
-* Just because you get one result on one use-case, does not mean you'll get the same result with the next use-case. It's worth getting data for all of your usecases before adjusting the compression ratio.
+* Just because you get one result on one use-case, does not mean you'll get the same result with the next use-case. It's worth getting data for all of your use-cases before adjusting the compression ratio.
 
 ### Using the results
+
+#### Manual
 
 Once you have values that you feel are safe for your use-case, you can adjust them in /etc/auto-zram/config
 
@@ -63,3 +65,24 @@ compressionRatio=2
 ```
 
 Make sure to read the comment above the setting before saving.
+
+#### Automatic
+
+**If your data isn't particularly important to you, and you don't mind some crashes** from overly optimistic settings, you could try this in /etc/auto-zram/config
+
+```bash
+compressionRatio="$(safeReadStat "saferRatio-min" "2")"
+```
+
+
+This essentially takes the previous detected minimum compression ratio, subtracts a little from it, and uses that as the assumption. If you haven't trained it on enough of your use-cases, this **will** tank your system when it gets under enough memory pressure. I therefore recommend a long run-in period while you try your different use-cases.
+
+NOTE that what ever you set it to, will not influence the statistics. So you can set it to something safe while gathering statistics.
+
+#### When will these new settings become active
+
+After restarting the auto-zram service either via a reboot, or like this
+
+```bash
+sudo systemctl restart auto-zram.service
+```
