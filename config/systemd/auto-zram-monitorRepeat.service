@@ -3,7 +3,7 @@ Description=Auto-ZRAM monitor
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/auto-zram compressionAlalysisJson
+ExecStart=/usr/bin/auto-zram compressionAnalysisJson
 
 [Install]
 WantedBy=timers.target

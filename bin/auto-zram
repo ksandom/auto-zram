@@ -252,7 +252,7 @@ function safeReadStat
   fi
 }
 
-function compressionAlalysis
+function compressionAnalysis
 {
   read uncompressedSize compressedSize < <(zramctl -nb -o DATA,COMPR /dev/zram0)
   
@@ -271,19 +271,19 @@ function compressionAlalysis
   saferRatio_max="$(safeReadStat "saferRatio-max" "NA")"
 }
 
-function compressionAlalysisJson
+function compressionAnalysisJson
 {
-  compressionAlalysis
+  compressionAnalysis
   echo "{\"uncompressedSize\":\"$uncompressedSize\",\"compressedSize\":\"$compressedSize\",\"maximumRatio\":\"$maximumRatio\",\"saferRatio\":\"$saferRatio\",\"maximumPossibleRatio-min\":\"$maximumPossibleRatio_min\",\"maximumPossibleRatio_max\":\"$maximumPossibleRatio_max\",\"saferRatio-min\":\"$saferRatio_min\",\"saferRatio-max\":\"$saferRatio_max\"}"
 }
 
-function compressionAlalysisJsonLoop
+function compressionAnalysisJsonLoop
 {
   interval="$1"
   
-  compressionAlalysisJson
+  compressionAnalysisJson
   while sleep $interval; do
-    compressionAlalysisJson
+    compressionAnalysisJson
   done
 }
 
@@ -301,7 +301,7 @@ function status
     mountState="not mounted"
   fi
   
-  compressionAlalysis
+  compressionAnalysis
   
   echo "Config
   % of memory to use    $percentageOfRamToUse
@@ -416,11 +416,11 @@ case $1 in
     deviceConfig="$(findDeviceConfig | head -n1)"
     status
   ;;
-  "compressionAlalysisJson") # Beta: Perform analysis on the compression, and output the results in json format for importing into your favourite analysis tool. For a human readable version, see status, above.
-    compressionAlalysisJson
+  "compressionAnalysisJson") # Beta: Perform analysis on the compression, and output the results in json format for importing into your favourite analysis tool. For a human readable version, see status, above.
+    compressionAnalysisJson
   ;;
-  "compressionAlalysisJsonLoop") # Same as compressionAlalysisJson, but in an infinite loop that runs every 'interval' seconds. Ie $0 compressionAlalysisJson [interval=$defaultLoopInterval]
-    compressionAlalysisJsonLoop "${2:-$defaultLoopInterval}"
+  "compressionAnalysisJsonLoop") # Same as compressionAnalysisJson, but in an infinite loop that runs every 'interval' seconds. Ie $0 compressionAnalysisJson [interval=$defaultLoopInterval]
+    compressionAnalysisJsonLoop "${2:-$defaultLoopInterval}"
   ;;
   *)
     command="$(basename "$0")"

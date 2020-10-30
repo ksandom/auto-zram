@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/auto-zram compressionAlalysisJsonLoop
+ExecStart=/usr/bin/auto-zram compressionAnalysisJsonLoop
 
 [Install]
 WantedBy=multi-user.target
