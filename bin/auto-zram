@@ -449,6 +449,7 @@ case $1 in
     else
       echo "ZRAM already mounted using $device." >&2
     fi
+    figureOutStuff
     status
   ;;
   "stop") # Unload zram from being used as swap.
@@ -473,9 +474,11 @@ case $1 in
     status
   ;;
   "compressionAnalysisJson") # Beta: Perform analysis on the compression, and output the results in json format for importing into your favourite analysis tool. For a human readable version, see status, above.
+    figureOutStuff
     compressionAnalysisJson
   ;;
   "compressionAnalysisJsonLoop") # Same as compressionAnalysisJson, but in an infinite loop that runs every 'interval' seconds. Ie $0 compressionAnalysisJson [interval=$defaultLoopInterval]
+    figureOutStuff
     compressionAnalysisJsonLoop "${2:-$defaultLoopInterval}"
   ;;
   *)
