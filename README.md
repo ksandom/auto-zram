@@ -1,6 +1,6 @@
 # auto-zram
 
-Automatically configure zram as swap on a machine, using sensible defaults, with the ability to tweak it to your needs.
+Automatically configure zram as swap on a machine, using sensible defaults, with the ability to tweak it to your needs. You shouldn't need to modify anything, but can if you want to.
 
 Originally inspired by [this gist](https://gist.github.com/sultanqasim/79799883c6b81c710e36a38008dfa374) which configures zram on a Raspberry Pi with exact specifications.
 
@@ -97,7 +97,7 @@ auto-zram prototype 40
 
 ## Special notes
 
-* You should only start or stop `auto-zram` when you have enough physical RAM to spare to cover everything that is currently in swap. If you don't, you'll probably have one of the "Remember that time when..." stories to tell.
+* You should only start or stop `auto-zram` when you have enough physical RAM to spare to cover everything that is currently in swap. If you don't, you'll probably have one of those "Remember that time when..." stories to tell.
 * If you'd like to experiment with compression ratios, please read [here](docs/compressionRatios.md) first.
 
 ## Contributions

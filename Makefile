@@ -67,3 +67,20 @@ install-monitor:
 
 uninstall-monitor:
 	make uninstall-monitorLoop
+
+
+# Convenience for debugging. This is not intended for a normal workflow.
+start:
+	systemctl start auto-zram.service || true
+	systemctl start auto-zram-monitorLoop.service || true
+	systemctl start auto-zram-monitorRepeat.service || true
+
+restart:
+	systemctl restart auto-zram.service || true
+	systemctl restart auto-zram-monitorLoop.service || true
+	systemctl restart auto-zram-monitorRepeat.service || true
+
+stop:
+	systemctl stop auto-zram.service || true
+	systemctl stop auto-zram-monitorLoop.service || true
+	systemctl stop auto-zram-monitorRepeat.service || true
