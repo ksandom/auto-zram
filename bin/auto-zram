@@ -7,6 +7,7 @@
 configLocation="/etc/auto-zram"
 configFile="$configLocation/config"
 statsLocation="$configLocation/stats"
+startStateLocation="$configLocation/startState"
 percentUpperWarnLevel=95
 percentLowerWarnLevel=1
 uid="$(id -u)"
@@ -254,27 +255,64 @@ function safeReadStat
 
 function compressionAnalysis
 {
-  read uncompressedSize compressedSize < <(zramctl -nb -o DATA,COMPR /dev/zram0)
-  
-  maximumRatio="$(divideFloat "$uncompressedSize" "$compressedSize")"
-  saferRatio="$(subtractFloat "$maximumRatio" "1")"
-  
-  if [ "$uid" == "0" ]; then
-    maxMin "maximumPossibleRatio" "$maximumRatio"
-    maxMin "saferRatio" "$saferRatio"
-  fi
-  
-  maximumPossibleRatio_min="$(safeReadStat "maximumPossibleRatio-min" "NA")"
-  maximumPossibleRatio_max="$(safeReadStat "maximumPossibleRatio-max" "NA")"
+  if isInUse; then
+    read uncompressedUsage compressedUsage < <(zramctl -nb -o DATA,COMPR /dev/zram0)
+    
+    maximumRatio="$(divideFloat "$uncompressedUsage" "$compressedUsage")"
+    saferRatio="$(subtractFloat "$maximumRatio" "1")"
+    
+    if [ "$uid" == "0" ]; then
+      maxMin "maximumPossibleRatio" "$maximumRatio"
+      maxMin "saferRatio" "$saferRatio"
+    fi
+    
+    maximumPossibleRatio_min="$(safeReadStat "maximumPossibleRatio-min" "NA")"
+    maximumPossibleRatio_max="$(safeReadStat "maximumPossibleRatio-max" "NA")"
 
-  saferRatio_min="$(safeReadStat "saferRatio-min" "NA")"
-  saferRatio_max="$(safeReadStat "saferRatio-max" "NA")"
+    saferRatio_min="$(safeReadStat "saferRatio-min" "NA")"
+    saferRatio_max="$(safeReadStat "saferRatio-max" "NA")"
+    
+    ratioDescrepancy="$(subtractFloat "$compressionRatio" "$maximumRatio")"
+    intRatioDescrepancy="$(integerIfy "$ratioDescrepancy")"
+    
+    if [ "$intRatioDescrepancy" -gt 0 ]; then
+      ratioHealthy="false"
+    else
+      ratioHealthy="true"
+    fi
+    
+    compressedPercentUsage="$((compressedUsage*100/virtualSize))"
+    uncompressedPercentUsage="$((uncompressedUsage*100/maxPhysicalUsage))"
+    
+    usageDescrepancy="$((uncompressedPercentUsage-compressedPercentUsage))"
+    
+    if [ "$usageDescrepancy" -gt 0 ]; then
+      usageHealthy="false"
+    else
+      usageHealthy="false"
+    fi
+  else
+    maximumRatio='NA'
+    saferRatio='NA'
+    
+    maximumPossibleRatio_max='NA'
+    maximumPossibleRatio_min='NA'
+    saferRatio_min='NA'
+    saferRatio_max='NA'
+    ratioDescrepancy='NA'
+    ratioHealthy='NA'
+    
+    compressedPercentUsage='NA'
+    uncompressedPercentUsage='NA'
+    usageDescrepancy='NA'
+    usageHealthy='NA'
+  fi
 }
 
 function compressionAnalysisJson
 {
   compressionAnalysis
-  echo "{\"uncompressedSize\":\"$uncompressedSize\",\"compressedSize\":\"$compressedSize\",\"maximumRatio\":\"$maximumRatio\",\"saferRatio\":\"$saferRatio\",\"maximumPossibleRatio-min\":\"$maximumPossibleRatio_min\",\"maximumPossibleRatio_max\":\"$maximumPossibleRatio_max\",\"saferRatio-min\":\"$saferRatio_min\",\"saferRatio-max\":\"$saferRatio_max\"}"
+  echo "{\"uncompressedUsage\":\"$uncompressedUsage\",\"compressedUsage\":\"$compressedUsage\",\"virtualSize\":\"$virtualSize\",\"maximumRatio\":\"$maximumRatio\",\"compressedPercentUsage\":\"$compressedPercentUsage\",\"uncompressedPercentUsage\":\"$uncompressedPercentUsage\",\"usageDescrepancy\":\"$usageDescrepancy\",\"usageHealthy\":\"$usageHealthy\",\"saferRatio\":\"$saferRatio\",\"maximumPossibleRatio-min\":\"$maximumPossibleRatio_min\",\"maximumPossibleRatio_max\":\"$maximumPossibleRatio_max\",\"saferRatio-min\":\"$saferRatio_min\",\"saferRatio-max\":\"$saferRatio_max\",\"configuredCompressionRatio\":\"$compressionRatio\",\"ratioDescrepancy\":\"$ratioDescrepancy\",\"ratioHealthy\":\"$ratioHealthy\"}"
 }
 
 function compressionAnalysisJsonLoop
@@ -284,6 +322,15 @@ function compressionAnalysisJsonLoop
   compressionAnalysisJson
   while sleep $interval; do
     compressionAnalysisJson
+  done
+}
+
+function recordStartupState
+{
+  mkdir -p "$startStateLocation"
+  
+  for setting in compressionRatio; do
+    echo "${!setting}" > "$startStateLocation/$setting"
   done
 }
 
@@ -310,11 +357,18 @@ function status
   usedConfigFile        $loadedConfigFile
   config file           $configFile
 Compression Analysis (Beta)
-  uncompressedSize      $uncompressedSize
-  compressedSize        $compressedSize
-  maximumRatio          $maximumRatio
-  saferRatio            $saferRatio
+  uncompressedUsage      $uncompressedUsage
+  compressedUsage        $compressedUsage
+  maximumRatio          $maximumRatio (min=$maximumPossibleRatio_min max=$maximumPossibleRatio_max)
+  saferRatio            $saferRatio (min=$saferRatio_min  max=$saferRatio_max)
   configuredRatio       $compressionRatio
+  ratioDescrepancy      $ratioDescrepancy
+  ratioHealthy          $ratioHealthy
+  
+  compressedUsage %     $compressedPercentUsage
+  uncompressedUsage %   $uncompressedPercentUsage
+  usageDescrepancy      $usageDescrepancy
+  usageHealthy          $usageHealthy
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
@@ -385,6 +439,8 @@ function requireRoot
 case $1 in
   "start") # Configure zram as swap.
     requireRoot
+    recordStartupState
+    
     if ! isInUse; then
       loadModule
       deviceConfig="$(findDeviceConfig | head -n1)"
