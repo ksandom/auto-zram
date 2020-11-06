@@ -187,8 +187,10 @@ function getMount
 
 function getSwapState
 {
-  free -m | head -n 1
-  free -m | grep ^Swap:
+  unit="${1:-b}"
+  
+  free "-$unit" | head -n 1
+  free "-$unit" | grep ^Swap:
 }
 
 function indent
@@ -283,14 +285,6 @@ function compressionAnalysis
     
     compressedPercentUsage="$((compressedUsage*100/virtualSize))"
     uncompressedPercentUsage="$((uncompressedUsage*100/maxPhysicalUsage))"
-    
-    usageDescrepancy="$((uncompressedPercentUsage-compressedPercentUsage))"
-    
-    if [ "$usageDescrepancy" -gt 0 ]; then
-      usageHealthy="false"
-    else
-      usageHealthy="false"
-    fi
   else
     maximumRatio='NA'
     saferRatio='NA'
@@ -312,7 +306,7 @@ function compressionAnalysis
 function compressionAnalysisJson
 {
   compressionAnalysis
-  echo "{\"uncompressedUsage\":\"$uncompressedUsage\",\"compressedUsage\":\"$compressedUsage\",\"virtualSize\":\"$virtualSize\",\"maximumRatio\":\"$maximumRatio\",\"compressedPercentUsage\":\"$compressedPercentUsage\",\"uncompressedPercentUsage\":\"$uncompressedPercentUsage\",\"usageDescrepancy\":\"$usageDescrepancy\",\"usageHealthy\":\"$usageHealthy\",\"saferRatio\":\"$saferRatio\",\"maximumPossibleRatio-min\":\"$maximumPossibleRatio_min\",\"maximumPossibleRatio_max\":\"$maximumPossibleRatio_max\",\"saferRatio-min\":\"$saferRatio_min\",\"saferRatio-max\":\"$saferRatio_max\",\"configuredCompressionRatio\":\"$compressionRatio\",\"ratioDescrepancy\":\"$ratioDescrepancy\",\"ratioHealthy\":\"$ratioHealthy\"}"
+  echo "{\"uncompressedUsage\":\"$uncompressedUsage\",\"compressedUsage\":\"$compressedUsage\",\"virtualSize\":\"$virtualSize\",\"maximumRatio\":\"$maximumRatio\",\"compressedPercentUsage\":\"$compressedPercentUsage\",\"uncompressedPercentUsage\":\"$uncompressedPercentUsage\",\"saferRatio\":\"$saferRatio\",\"maximumPossibleRatio-min\":\"$maximumPossibleRatio_min\",\"maximumPossibleRatio_max\":\"$maximumPossibleRatio_max\",\"saferRatio-min\":\"$saferRatio_min\",\"saferRatio-max\":\"$saferRatio_max\",\"configuredCompressionRatio\":\"$compressionRatio\",\"ratioDescrepancy\":\"$ratioDescrepancy\",\"ratioHealthy\":\"$ratioHealthy\"}"
 }
 
 function compressionAnalysisJsonLoop
@@ -367,8 +361,6 @@ Compression Analysis (Beta)
   
   compressedUsage %     $compressedPercentUsage
   uncompressedUsage %   $uncompressedPercentUsage
-  usageDescrepancy      $usageDescrepancy
-  usageHealthy          $usageHealthy
 Derived config/knowledge
   Memory (MB)
     total               $totalMemory
@@ -396,7 +388,7 @@ State
     echo "
   Swap"
     
-    getSwapState | indent "    "
+    getSwapState m | indent "    "
     getSwappiness | indent "    "
 
   echo
